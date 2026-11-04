@@ -1,0 +1,407 @@
+{
+  "name": "Health Daily Report",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Daily Health Report",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Date",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Health Worker"
+            },
+            {
+              "fieldLabel": "Facility"
+            },
+            {
+              "fieldLabel": "Clients Seen",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Malaria Test",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Malaria Positive",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        96
+      ],
+      "id": "407a7795-7fd8-4eaa-ae2f-2612e7ed068e",
+      "name": "On form submission"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "5352e7ba-f4d4-440a-95d1-aa21e90d275d",
+              "leftValue": "={{ $json['Clients Seen'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "b7b7b3e2-9702-4db8-8210-de067cbd1d3e",
+              "leftValue": "={{ $json['Malaria Test'] }}",
+              "rightValue": "={{ $json['Clients Seen'] }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "8ee707f5-c761-48e0-be94-76549d509446",
+              "leftValue": "={{ $json['Malaria Positive'] }}",
+              "rightValue": "={{ $json['Malaria Test'] }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "94406e57-e398-47f0-a840-2b30ed2db00a",
+              "leftValue": "={{ $json['Malaria Positive'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        96
+      ],
+      "id": "2c1c2fe0-d30a-4d5d-b0b6-37fe25a337ae",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Health M&E Reports"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Health Worker": "={{ $('On form submission').item.json['Health Worker'] }}",
+            "Facility": "={{ $('On form submission').item.json.Facility }}",
+            "Clients Seen": "={{ $('On form submission').item.json['Clients Seen'] }}",
+            "Malaria Tests": "={{ $('On form submission').item.json['Malaria Test'] }}",
+            "Malaria Positive": "={{ $('On form submission').item.json['Malaria Positive'] }}",
+            "Date": "={{ $('On form submission').item.json.Date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Health Worker",
+              "displayName": "Health Worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facility",
+              "displayName": "Facility",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clients Seen",
+              "displayName": "Clients Seen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Malaria Tests",
+              "displayName": "Malaria Tests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Malaria Positive",
+              "displayName": "Malaria Positive",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "8507216d-1054-4e61-8071-21d7cbb017ab",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "⚠️ Report failed data quality check",
+        "emailType": "text",
+        "message": "=A daily report failed the data quality check and was NOT saved. \n\nHealth Worker: {{ $json['Health Worker'] }}\nFacility: {{ $json['Facility'] }} \nDate: {{ $json['Date'] }}\nClients Seen: {{ $json['Clients Seen'] }}\nMalaria Test: {{ $json['Malaria Test'] }}\nMalaria Positive: {{ $json['Malaria Positive'] }}  \n\nPlease follow up with the health worker to correct and resubmit.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        192
+      ],
+      "id": "4df134d9-b3bb-479f-9e8f-27f162672079",
+      "name": "Data Quality Alert",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Health M&E Reports"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Health Worker",
+              "lookupValue": "={{ $('On form submission').item.json['Health Worker'] }}"
+            },
+            {
+              "lookupColumn": "Date",
+              "lookupValue": "={{ $('On form submission').item.json.Date }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1d6523a7-3bf8-4b5a-9dc8-4a9f67eb5466",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "f9d4c320-8f2d-4451-aebe-5b8703e81f76",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "10d7cc3c-be67-48dc-a227-e5ea1b74419d",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "⚠️ Duplicate report blocked",
+        "emailType": "text",
+        "message": "={{ $('On form submission').item.json['Health Worker'] }} already submitted a report for {{ $('On form submission').item.json.Date }}. The second report was not saved.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        96
+      ],
+      "id": "500ee7d0-c8e2-4f83-9799-ec383238c680",
+      "name": "Send a message",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Data Quality Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}

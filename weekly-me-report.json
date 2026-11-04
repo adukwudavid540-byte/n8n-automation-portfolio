@@ -1,0 +1,350 @@
+{
+  "name": "Weekly M&E Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -192
+      ],
+      "id": "44f3c057-376c-433a-bb5b-c97d8c9aebff",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Health M&E Reports"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -192
+      ],
+      "id": "fa16e4ce-7c61-4493-8689-974ff0db83d5",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "Clients Seen"
+            },
+            {
+              "aggregation": "sum",
+              "field": "Malaria Tests"
+            },
+            {
+              "aggregation": "sum",
+              "field": "Malaria Positive"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "Facility",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -192
+      ],
+      "id": "16f8ba83-b566-4289-b8c9-df2bd869adf8",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "cf805b64-4754-4ca8-a510-ef0bc98ed400",
+              "leftValue": "={{ $json.Date }}",
+              "rightValue": "={{ $now.minus({ days: 7 }) }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        -192
+      ],
+      "id": "6db4e4c8-9f6d-4b9d-b121-a1102ac3e413",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "facilities",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "2285e4a2-38d7-4041-b5d8-4c503e31cfcb",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "🚨 Urgent: high malaria positivity",
+        "emailType": "text",
+        "message": "=These facilities had a malaria positivity rate of 30% or more this week:  {{ $json.facilities.filter(f => f.sum_Malaria_Tests && f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100 >= 30).map(f => `${f.Facility}: ${(f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100).toFixed(1)}% (${f.sum_Malaria_Positive} positive out of ${f.sum_Malaria_Tests} tests)`).join('\\n') }}  Please review these facilities and consider follow-up.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        -288
+      ],
+      "id": "5785c08a-f6c6-4f49-a4dc-629bfa3a36ab",
+      "name": "Urgent Positivity Alert",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "Weekly Malaria Report",
+        "emailType": "text",
+        "message": "={{ $json.output[0].content[0].text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        -96
+      ],
+      "id": "cbd7c71f-cec1-433f-af58-5bb42dc2c403",
+      "name": "Weekly Report Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "2edce2df-319e-4e95-b0f4-7ce2da2c9c8b",
+              "leftValue": "={{ $json.facilities.filter(f => f.sum_Malaria_Tests && f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100 >= 30).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1184,
+        -288
+      ],
+      "id": "732443a7-53d6-4747-89dc-df6f415655df",
+      "name": "Positivity 30% or more?"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an M&E assistant. Write a short weekly malaria report (4 to 6 sentences) for a programme manager. Use only the figures below and do not invent any numbers. Mention which facility has the highest positivity rate. Write in plain text with no symbols like ** or #. Do not ask questions or offer further help.\n\nOverall totals:\nTotal clients seen: {{ $json.facilities.reduce((t, f) => t + f.sum_Clients_Seen, 0) }}\nMalaria tests done: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Tests, 0) }}\nMalaria positive: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Positive, 0) }}\nPositivity rate: {{ ($json.facilities.reduce((t, f) => t + f.sum_Malaria_Positive, 0) / $json.facilities.reduce((t, f) => t + f.sum_Malaria_Tests, 0) * 100).toFixed(1) }}%\n\nBy facility:\n{{ $json.facilities.map(f => `${f.Facility}: ${f.sum_Clients_Seen} clients, ${f.sum_Malaria_Tests} tests, ${f.sum_Malaria_Positive} positive (${f.sum_Malaria_Tests ? (f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100).toFixed(1) : '0.0'}%)`).join('\\n') }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "7c62e62b-968b-46b6-9233-b805afdf6f38",
+      "name": "Write Weekly Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Your OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Write Weekly Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Positivity 30% or more?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Positivity 30% or more?": {
+      "main": [
+        [
+          {
+            "node": "Urgent Positivity Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Weekly Summary": {
+      "main": [
+        [
+          {
+            "node": "Weekly Report Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
