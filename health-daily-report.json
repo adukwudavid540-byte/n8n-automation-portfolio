@@ -330,6 +330,72 @@
           "name": "Gmail account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "a9d7c505-726d-4387-8a23-55e75fcce631",
+              "leftValue": "={{ $('On form submission').item.json['Clients Seen'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "f3203bd3-80e5-449c-847d-a10c0efd5dbe",
+              "leftValue": "={{ $('On form submission').item.json['Malaria Test'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "8479a94a-229c-44c3-b418-011a6d47b7ac",
+      "name": "Zero tests?"
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "⚠️ Warning: clients seen but no malaria tests",
+        "emailType": "text",
+        "message": "=A daily report was saved, but it needs checking.  {{ $('On form submission').item.json['Health Worker'] }} at {{ $('On form submission').item.json.Facility }} saw {{ $('On form submission').item.json['Clients Seen'] }} clients on {{ $('On form submission').item.json.Date }} but recorded 0 malaria tests.  Please check whether test kits are available.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -192
+      ],
+      "id": "e7cbe09f-8664-4488-890f-2ada18589da1",
+      "name": "Zero Tests Warning",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -386,6 +452,28 @@
         [
           {
             "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Zero tests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zero tests?": {
+      "main": [
+        [
+          {
+            "node": "Zero Tests Warning",
             "type": "main",
             "index": 0
           }

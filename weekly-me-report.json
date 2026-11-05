@@ -98,10 +98,19 @@
             {
               "id": "cf805b64-4754-4ca8-a510-ef0bc98ed400",
               "leftValue": "={{ $json.Date }}",
-              "rightValue": "={{ $now.minus({ days: 7 }) }}",
+              "rightValue": "={{ $now.minus({ weeks: 1 }).startOf('week') }}",
               "operator": {
                 "type": "dateTime",
-                "operation": "after"
+                "operation": "afterOrEquals"
+              }
+            },
+            {
+              "id": "ae4c3f61-3151-47d2-88bd-d56ebfed7c3a",
+              "leftValue": "={{ $json.Date }}",
+              "rightValue": "={{ $now.startOf('week') }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
               }
             }
           ],
@@ -227,7 +236,7 @@
         "responses": {
           "values": [
             {
-              "content": "=You are an M&E assistant. Write a short weekly malaria report (4 to 6 sentences) for a programme manager. Use only the figures below and do not invent any numbers. Mention which facility has the highest positivity rate. Write in plain text with no symbols like ** or #. Do not ask questions or offer further help.\n\nOverall totals:\nTotal clients seen: {{ $json.facilities.reduce((t, f) => t + f.sum_Clients_Seen, 0) }}\nMalaria tests done: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Tests, 0) }}\nMalaria positive: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Positive, 0) }}\nPositivity rate: {{ ($json.facilities.reduce((t, f) => t + f.sum_Malaria_Positive, 0) / $json.facilities.reduce((t, f) => t + f.sum_Malaria_Tests, 0) * 100).toFixed(1) }}%\n\nBy facility:\n{{ $json.facilities.map(f => `${f.Facility}: ${f.sum_Clients_Seen} clients, ${f.sum_Malaria_Tests} tests, ${f.sum_Malaria_Positive} positive (${f.sum_Malaria_Tests ? (f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100).toFixed(1) : '0.0'}%)`).join('\\n') }}"
+              "content": "=You are an M&E assistant. Write a short weekly malaria report (4 to 6 sentences) for a programme manager. Use only the figures below and do not invent any numbers. Mention which facility has the highest positivity rate. Write in plain text with no symbols like ** or #. Do not ask questions or offer further help.\n\nOverall totals:\nTotal clients seen: {{ $json.facilities.reduce((t, f) => t + f.sum_Clients_Seen, 0) }}\nMalaria tests done: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Tests, 0) }}\nMalaria positive: {{ $json.facilities.reduce((t, f) => t + f.sum_Malaria_Positive, 0) }}\nPositivity rate: {{ (() => { const t = $json.facilities.reduce((s, f) => s + f.sum_Malaria_Tests, 0); const p = $json.facilities.reduce((s, f) => s + f.sum_Malaria_Positive, 0); return t ? (p / t * 100).toFixed(1) + '%' : 'no tests this week'; })() }}\n\nBy facility:\n{{ $json.facilities.map(f => `${f.Facility}: ${f.sum_Clients_Seen} clients, ${f.sum_Malaria_Tests} tests, ${f.sum_Malaria_Positive} positive (${f.sum_Malaria_Tests ? (f.sum_Malaria_Positive / f.sum_Malaria_Tests * 100).toFixed(1) + '%' : 'no tests this week'})`).join('\\n') }}"
             }
           ]
         },
